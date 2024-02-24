@@ -156,6 +156,9 @@ public class Robot extends TimedRobot {
     
       } else if(controller2.getXButton()){
         exampleServo1.setPosition(0.3);
+      
+      } else {
+        exampleServo1.setPosition(-0.5);
   
       }
 
