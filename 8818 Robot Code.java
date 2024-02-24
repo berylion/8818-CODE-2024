@@ -27,7 +27,9 @@ public class Robot extends TimedRobot {
   Victor rearRight = new Victor(5);
   PWMSparkMax Backintake = new PWMSparkMax(2);
   PWMSparkMax Upperintake = new PWMSparkMax(6);
-  PWMSparkMax ShooterU = new PWMSparkMax(7); 
+  PWMSparkMax ShooterU = new PWMSparkMax(7);
+  PWMSparkMax Motor = new PWMSparkMax(0);
+  PWMSparkMax Pulley = new PWMSparkMax(8);
 
 
 
@@ -145,26 +147,39 @@ public class Robot extends TimedRobot {
 
        //Controls both shooters//
       if(controller1.getYButton()){
-        ShooterU.set(1);
+        ShooterU.set(.98);
       }
       if(controller1.getXButton()){
         ShooterU.set(0);
       }
+      //----------------------------------------------------
      // Flicker Program//
       if (controller2.getYButton()){
         exampleServo1.setPosition(1);
     
       } else if(controller2.getXButton()){
         exampleServo1.setPosition(0.3);
-      
-      } else {
-        exampleServo1.setPosition(-0.5);
   
       }
-
-
-   
-
+      //--------------------------------------------
+      /*controls the thing on the tip of the shooter */
+      if(controller2.getYButtonPressed()){
+        Motor.set(-.58);
+      }else if(controller2.getYButtonReleased()){
+        Motor.set(0);
+      }
+        if(controller2.getXButtonPressed()){
+        Motor.set(.85);
+      }else if(controller2.getXButtonReleased()){
+        Motor.set(0);
+      }
+      //---------------------------------------------
+      /*code for pulley */
+      if(controller2.getRightBumperPressed()){
+        Pulley.set(.98);
+      }else if(controller2.getRightBumperReleased()){
+        Pulley.set(0);
+      }
 
 
 
@@ -184,4 +199,3 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {}
 }
-
