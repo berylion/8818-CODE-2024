@@ -27,11 +27,13 @@ public class Robot extends TimedRobot {
   Victor rearRight = new Victor(5);
   PWMSparkMax Backintake = new PWMSparkMax(2);
   PWMSparkMax Upperintake = new PWMSparkMax(6);
-  PWMSparkMax ShooterU = new PWMSparkMax(7); 
+  PWMSparkMax ShooterU = new PWMSparkMax(7);
+  PWMSparkMax Motor = new PWMSparkMax(0);
 
 
 
-  Servo exampleServo1 = new Servo(9);
+
+  Servo exampleServo1 = new Servo(8);
 
   private Command m_autonomousCommand;
 
@@ -99,7 +101,9 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
    
 
-   
+   /*controller 1: LB, RB, A, B, Y, X */
+   /*controller 2: LB, RB, A, B, Y, X */
+
     XboxController controller1 = new XboxController(0);
     XboxController controller2 = new XboxController(1);
 
@@ -145,30 +149,32 @@ public class Robot extends TimedRobot {
 
        //Controls both shooters//
       if(controller1.getYButton()){
-        ShooterU.set(1);
+        ShooterU.set(.98);
       }
       if(controller1.getXButton()){
         ShooterU.set(0);
       }
+      //----------------------------------------------------
      // Flicker Program//
-      if (controller2.getYButton()){
-        exampleServo1.setPosition(1);
-    
-      } else if(controller2.getXButton()){
-        exampleServo1.setPosition(0.3);
-      
+      if (controller2.getRightBumper()){
+      exampleServo1.setPosition(.5);
       } else {
-        exampleServo1.setPosition(0.5);
-  
+      exampleServo1.setPosition(1);
       }
 
-
-   
-
-
-
-
-
+      //--------------------------------------------
+      /*controls the thing on the tip of the shooter */
+      if(controller2.getYButtonPressed()){
+        Motor.set(-.58);
+      }else if(controller2.getYButtonReleased()){
+        Motor.set(0);
+      }
+        if(controller2.getXButtonPressed()){
+        Motor.set(.85);
+      }else if(controller2.getXButtonReleased()){
+        Motor.set(0);
+      }
+      //---------------------------------------------
 
   }
    
