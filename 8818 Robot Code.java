@@ -82,8 +82,53 @@ public class Robot extends TimedRobot {
  
 
   /** This function is called periodically during autonomous. */
-  @Override
-  public void autonomousPeriodic() {}
+
+@Override
+public void autonomousPeriodic() {
+    // Define the duration (in seconds) for each action
+    double driveDuration = 1.0; // Adjust this value as needed
+    double strafeDuration = 1.0; // Adjust this value as needed
+    double intakeDuration = 1.5; // Adjust this value as needed
+
+    // Get the elapsed time since autonomous started
+    double elapsedTime = autonomousTimer.get();
+
+    // Drive the robot backwards for the specified duration
+    if (elapsedTime < driveDuration) {
+        // Drive backwards at a fixed speed
+        frontLeft.set(-0.5);
+        frontRight.set(-0.5);
+        rearLeft.set(-0.5);
+        rearRight.set(-0.5);
+    } 
+    // Strafe the robot to the left for the specified duration
+    else if (elapsedTime < driveDuration + strafeDuration) {
+        // Strafe left at a fixed speed
+        frontLeft.set(-0.5);
+        frontRight.set(0.5);
+        rearLeft.set(0.5);
+        rearRight.set(-0.5);
+    } 
+    // Run the intake for the specified duration
+    else if (elapsedTime < driveDuration + strafeDuration + intakeDuration) {
+        // Run the intake mechanism
+        Backintake.set(0.9);
+        Upperintake.set(0.7);
+    } 
+    // Run the servo to position 1
+    else {
+        // Set the servo position to 1
+        exampleServo1.setPosition(1.0);
+        
+        // Stop all motors and intake after the actions are completed
+        frontLeft.stopMotor();
+        frontRight.stopMotor();
+        rearLeft.stopMotor();
+        rearRight.stopMotor();
+        Backintake.set(0.0);
+        Upperintake.set(0.0);
+    }
+  }
 
   @Override
   public void teleopInit() {
