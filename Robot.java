@@ -9,8 +9,10 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.motorcontrol.Victor;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 
 
 public class Robot extends TimedRobot {
@@ -19,22 +21,30 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   // drive motors
-  CANSparkMax frontRight = new CANSparkMax(1, MotorType.kBrushed); //frontright
-  CANSparkMax backRight = new CANSparkMax(2, MotorType.kBrushed);  //backright
-  CANSparkMax frontLeft = new CANSparkMax(3, MotorType.kBrushed);  //frontleft
-  CANSparkMax backLeft = new CANSparkMax(4, MotorType.kBrushed); //backleft
+  CANSparkMax frontRight = new CANSparkMax(1, MotorType.kBrushless); //frontright
+  CANSparkMax backRight = new CANSparkMax(2, MotorType.kBrushless);  //backright
+  CANSparkMax frontLeft = new CANSparkMax(3, MotorType.kBrushless);  //frontleft
+  CANSparkMax backLeft = new CANSparkMax(4, MotorType.kBrushless); //backleft
   // intake motors
-  CANSparkMax intake1 = new CANSparkMax(5, MotorType.kBrushed);// can id 5
-  CANSparkMax intake2 = new CANSparkMax(6, MotorType.kBrushed);// cna id 6
+  CANSparkMax intake1 = new CANSparkMax(5, MotorType.kBrushed);
+  CANSparkMax intake2 = new CANSparkMax(6, MotorType.kBrushed);
   // Shooter motors (y-split)
-  Victor shooter = new Victor(0);
+  CANSparkMax shooter1 = new CANSparkMax(7, MotorType.kBrushed);
+  CANSparkMax shooter2 = new CANSparkMax(8, MotorType.kBrushed);
   // controllers
   XboxController driver = new XboxController(0);
   XboxController coPilot = new XboxController(1);
   // servo
-  Servo flicker = new Servo(1);//PWM port 1
+  Servo flicker = new Servo(2);
+  Servo Note = new Servo(0);
   // timer
   Timer timer1 = new Timer();
+  //pneumatics
+  DoubleSolenoid Armsolenoid = new DoubleSolenoid(PneumaticsModuleType.REVPH, 6, 7);
+  boolean solenoidOpen = false;
+  //drive limit
+  double limit = .90;
+
 
 
   /**
@@ -50,7 +60,6 @@ public class Robot extends TimedRobot {
     CameraServer.startAutomaticCapture();
     // timer
     timer1.start();
-
   }
 
   /**
@@ -78,22 +87,94 @@ public class Robot extends TimedRobot {
     m_autoSelected = m_chooser.getSelected();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
+    timer1.reset();
   }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    switch (m_autoSelected) {
-      case kCustomAuto:
-        // Put custom auto code here
-        break;
-      case kDefaultAuto:
-      default:
-
-
-        break;
+  switch (m_autoSelected) {
+   case kCustomAuto:
+    if(timer1.get() < 2.0){ //everything off
+      shooter1.set(0);
+      shooter2.set(0);
+      intake1.set(0);
+      intake2.set(0);
+      flicker.setPosition(1);
+      //drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+    }else if(timer1.get() < 2.4){ //spin up shooter
+      shooter1.set(-.98);
+      shooter2.set(.98);
+    }else if(timer1.get() < 2.6){ //flick preload
+      flicker.setPosition(.5);
+    }else if(timer1.get() < 2.7){ //pause after shooting preload
+      shooter1.set(0);
+      shooter2.set(0);
+      intake1.set(0);
+      intake2.set(0);
+      //drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+    }else if(timer1.get() < 3.4){ //intake on and drive toward NOTE
+      //intake1.set(.98);
+      //intake2.set(-.98);
+      frontLeft.set(-.25);
+      backLeft.set(-.25);
+      frontRight.set(.25);
+      backRight.set(.25);
     }
+    else if(timer1.get() < 3.8){ //pause after grabbing note
+      shooter1.set(0);
+      shooter2.set(0);
+      intake1.set(0);
+      intake2.set(0);
+      //drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+      flicker.setPosition(1);
+    }
+    //else if(timer1.get() < 4.0){ //drive up to shoot
+    //  frontLeft.set(-.25);
+    //  backLeft.set(-.25);
+    //  frontRight.set(.25);
+    //  backRight.set(.25);
+    //}else if(timer1.get() < 4.2){ //drive stops and spins up shooter
+    //  frontLeft.set(0);
+    //  backLeft.set(0);
+    //  frontRight.set(0);
+    //  backRight.set(0);
+    //  shooter1.set(-68);
+    //  shooter2.set(-68);
+    //}else if(timer1.get() < 4.4){ //pause after shooting
+    //  shooter1.set(0);
+    //  shooter2.set(0);
+    //  intake1.set(0);
+    //  intake2.set(0);
+    //  //drive
+    //  frontLeft.set(0);
+    //  backLeft.set(0);
+    //  frontRight.set(0);
+    //  backRight.set(0);
+    //}else if(timer1.get() < 4.6)
+      
+    // Put custom auto code here
+   break;
+   case kDefaultAuto:
+   default:
+
+   break;
+  
   }
+
+}
 
   /** This function is called once when teleop is enabled. */
   @Override
@@ -102,47 +183,73 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-  //drive controls (including strafe)
   if(driver.getRightBumper()){
-   frontLeft.set(-.98);
-   backLeft.set(.98);
-   backLeft.setInverted(true);
-   frontRight.set(.98);
-   frontRight.setInverted(true);
-   backRight.set(-.98);
+   frontLeft.set(-.70);
+   backLeft.set(.80);
+   frontRight.set(.60);
+   backRight.set(-.70);
   } else if(driver.getLeftBumper()){      
-   frontLeft.set(.98);
-   backLeft.set(-.98);
-   frontLeft.setInverted(true);
-   frontRight.set(-.98);
-   backRight.setInverted(true);
-   backRight.set(.98);
+   frontLeft.set(.70);
+   backLeft.set(-.80);
+   frontRight.set(-.60);
+   backRight.set(.70);
   } else { //tank drive part
-   frontLeft.set(-driver.getLeftY());
-   backLeft.set(-driver.getLeftY());
-   frontRight.set(driver.getRightY());
-   backRight.set(driver.getRightY());
+    if(driver.getRightStickButton()){
+      limit = .90;
+    }else if(driver.getLeftStickButton()){
+      limit = .45;
+    }
+   frontLeft.set(-driver.getLeftY()*limit);
+   backLeft.set(-driver.getLeftY()*limit);
+   frontRight.set(driver.getRightY()*limit);
+   backRight.set(driver.getRightY()*limit);
+  }
+  //Note dropper servo
+  if(driver.getYButton()){
+    Note.setPosition(.5);
+  }else{
+    Note.setPosition(1);
+  }
+   //pneumatic controls
+  if(driver.getBButton()){  //pneumatics go down
+    solenoidOpen = !solenoidOpen;
+  }   
+  if(solenoidOpen){
+    Armsolenoid.set(Value.kForward);  
+  } else if (driver.getAButton()){  //pneumatics go up
+    Armsolenoid.set(Value.kReverse);
+  } else{
+    Armsolenoid.set(Value.kOff);
   }
   //intake controls
-  if(coPilot.getAButton()){
-   intake1.set(.98);  //pos
-   intake2.set(-.98);
-  } else if(coPilot.getBButton()){
+  if(coPilot.getAButtonPressed()){
+   intake1.set(.60);  //pos
+   intake2.set(-.60);
+  }else if(coPilot.getAButtonReleased()){
    intake1.set(0);
    intake2.set(0);
   }
-  //shooter controls
-  if(driver.getYButton()){
-   shooter.set(-.68);
+  if(coPilot.getBButtonPressed()){  //outtake
+    intake1.set(-.60);
+    intake2.set(.60);
+  }else if(coPilot.getBButtonReleased()){
+    intake1.set(0);
+    intake2.set(0);
   }
-  if(driver.getXButton()){
-   shooter.set(0);
+  //shooter controls
+  if(coPilot.getYButton()){
+   shooter1.set(-.80);
+   shooter2.set(.80);
+  }
+  if(coPilot.getXButton()){
+   shooter1.set(0);
+   shooter2.set(0);
   }
   //flicker controls
-  if (coPilot.getRightBumper()){
-   flicker.setPosition(-.5);
-  } else {
-   flicker.setPosition(1);
+  if(coPilot.getRightBumper()){
+    flicker.setPosition(-5);
+  }else {
+    flicker.setPosition(1);
   }
   }
 
