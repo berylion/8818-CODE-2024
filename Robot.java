@@ -7,17 +7,20 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Servo;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
-import edu.wpi.first.cameraserver.CameraServer;
+//import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+// import java.lang.Math;
 
 
 public class Robot extends TimedRobot {
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
+  private static final String kopenside = "open side";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   // drive motors
@@ -26,8 +29,8 @@ public class Robot extends TimedRobot {
   CANSparkMax frontLeft = new CANSparkMax(3, MotorType.kBrushless);  //frontleft
   CANSparkMax backLeft = new CANSparkMax(4, MotorType.kBrushless); //backleft
   // intake motors
-  CANSparkMax intake1 = new CANSparkMax(5, MotorType.kBrushed);
-  CANSparkMax intake2 = new CANSparkMax(6, MotorType.kBrushed);
+  CANSparkMax intake1 = new CANSparkMax(5, MotorType.kBrushed); //inner
+  CANSparkMax intake2 = new CANSparkMax(6, MotorType.kBrushed); //outer
   // Shooter motors (y-split)
   CANSparkMax shooter1 = new CANSparkMax(7, MotorType.kBrushed);
   CANSparkMax shooter2 = new CANSparkMax(8, MotorType.kBrushed);
@@ -43,7 +46,7 @@ public class Robot extends TimedRobot {
   DoubleSolenoid Armsolenoid = new DoubleSolenoid(PneumaticsModuleType.REVPH, 6, 7);
   boolean solenoidOpen = false;
   //drive limit
-  double limit = .90;
+  double limit = .72;
 
 
 
@@ -55,9 +58,10 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
+    m_chooser.addOption("open side", kopenside);
     SmartDashboard.putData("Auto choices", m_chooser);
     // camera use
-    CameraServer.startAutomaticCapture();
+    //CameraServer.startAutomaticCapture();
     // timer
     timer1.start();
   }
@@ -93,7 +97,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-  switch (m_autoSelected) {
+  switch (m_autoSelected) { //how much time after is how long it will run
    case kCustomAuto:
     if(timer1.get() < 2.0){ //everything off
       shooter1.set(0);
@@ -101,35 +105,171 @@ public class Robot extends TimedRobot {
       intake1.set(0);
       intake2.set(0);
       flicker.setPosition(1);
+      // drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+    }else if(timer1.get() < 2.6){ //spin up shooter
+      shooter1.set(-.98);
+      shooter2.set(.98);
+    }else if(timer1.get() < 3.1){ //flick preload
+      flicker.setPosition(.3);
+    }else if(timer1.get() < 3.6){ //pause after shooting preload and start intake
+      shooter1.set(0);
+      shooter2.set(0);
+      flicker.setPosition(1);
+      intake1.set(.80);
+      intake2.set(-.60);
       //drive
       frontLeft.set(0);
       backLeft.set(0);
       frontRight.set(0);
       backRight.set(0);
-    }else if(timer1.get() < 2.4){ //spin up shooter
-      shooter1.set(-.98);
-      shooter2.set(.98);
-    }else if(timer1.get() < 2.6){ //flick preload
-      flicker.setPosition(.5);
-    }else if(timer1.get() < 2.7){ //pause after shooting preload
+    }else if(timer1.get() < 4.3){ //drive toward NOTE
+      frontLeft.set(-.80);
+      backLeft.set(-.80);
+      frontRight.set(.80);
+      backRight.set(.80);
+    }else if(timer1.get() < 4.6){ //pause after grabbing note
+      shooter1.set(0);
+      shooter2.set(0);
+      //drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+      flicker.setPosition(1);
+    }else if(timer1.get() < 4.7){ //drive up to shoot
+      frontLeft.set(.40);
+      backLeft.set(.40);
+      frontRight.set(-.40);
+      backRight.set(-.40);
+      intake1.set(0);
+      intake2.set(0);
+    }else if(timer1.get() < 5.2){ //drive stops and spins up shooter
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+      shooter1.set(-68);
+      shooter2.set(-68);
+    }else if(timer1.get() < 5.6){
+      flicker.setPosition(.4);
+    }else if(timer1.get() < 6.0){ //pause after shooting
       shooter1.set(0);
       shooter2.set(0);
       intake1.set(0);
       intake2.set(0);
+      flicker.setPosition(1);
       //drive
       frontLeft.set(0);
       backLeft.set(0);
       frontRight.set(0);
       backRight.set(0);
-    }else if(timer1.get() < 3.4){ //intake on and drive toward NOTE
-      //intake1.set(.98);
-      //intake2.set(-.98);
-      frontLeft.set(-.25);
-      backLeft.set(-.25);
-      frontRight.set(.25);
-      backRight.set(.25);
     }
-    else if(timer1.get() < 3.8){ //pause after grabbing note
+   break;
+   case kopenside:  //open side 
+    if(timer1.get() < 2.0){ //everything off
+      shooter1.set(0);
+      shooter2.set(0);
+      intake1.set(0);
+      intake2.set(0);
+      flicker.setPosition(1);
+      // drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+    }else if(timer1.get() < 2.8){ //spin up shooter
+      shooter1.set(-.98);
+      shooter2.set(.98);
+    }else if(timer1.get() < 3.4){ //flick preload
+      flicker.setPosition(.3);
+    }else if(timer1.get() < 6.0){ //pause after shooting preload and start intake
+      shooter1.set(0);
+      shooter2.set(0);
+      flicker.setPosition(1);
+      //drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+    }else if(timer1.get() < 6.4){ //drive toward NOTE
+      frontLeft.set(-.35);
+      backLeft.set(-.35);
+      frontRight.set(.35);
+      backRight.set(.35);
+    }else if(timer1.get() < 7.0){ //pause after grabbing note
+      shooter1.set(0);
+      shooter2.set(0);
+      //drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+      flicker.setPosition(1);
+    }else if(timer1.get() < 7.3){ //turn
+      frontLeft.set(.35);
+      backLeft.set(.35);
+      frontRight.set(.35);
+      backRight.set(.35);
+    }else if(timer1.get() < 7.8){ //drive more back
+      frontLeft.set(-.35);
+      backLeft.set(-.35);
+      frontRight.set(.35);
+      backRight.set(.35);
+    }else if(timer1.get() <9.0){
+      shooter1.set(0);
+      shooter2.set(0);
+      flicker.setPosition(1);
+      // drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+    }
+   break;
+   case kDefaultAuto: //amp side
+   default:
+    if(timer1.get() < 2.0){ //everything off
+      shooter1.set(0);
+      shooter2.set(0);
+      intake1.set(0);
+      intake2.set(0);
+      flicker.setPosition(1);
+      // drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+    }else if(timer1.get() < 2.3){
+      shooter1.set(.80);
+      shooter2.set(-.80);
+    }else if(timer1.get() < 2.8){ //spin up shooter
+      shooter1.set(-.98);
+      shooter2.set(.98);
+    }else if(timer1.get() < 3.4){ //flick preload
+      flicker.setPosition(.3);
+    }else if(timer1.get() < 3.8){ //flick preload
+      flicker.setPosition(1);
+    }else if(timer1.get() < 4.2){ //flick preload
+      flicker.setPosition(.3);
+    }else if(timer1.get() < 6.0){ //pause after shooting preload and start intake
+      shooter1.set(0);
+      shooter2.set(0);
+      flicker.setPosition(1);
+      //drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
+    }else if(timer1.get() < 6.4){ //drive toward NOTE
+      frontLeft.set(-.35);
+      backLeft.set(-.35);
+      frontRight.set(.35);
+      backRight.set(.35);
+    }else if(timer1.get() < 7.0){ //pause after grabbing note
       shooter1.set(0);
       shooter2.set(0);
       intake1.set(0);
@@ -140,38 +280,29 @@ public class Robot extends TimedRobot {
       frontRight.set(0);
       backRight.set(0);
       flicker.setPosition(1);
+    }else if(timer1.get() < 7.3){ //turn
+      frontLeft.set(-.35);
+      backLeft.set(-.35);
+      frontRight.set(-.35);
+      backRight.set(-.35);
+    }else if(timer1.get() < 7.8){ //drive more back
+      frontLeft.set(-.65);
+      backLeft.set(-.65);
+      frontRight.set(.65);
+      backRight.set(.65);
+    }else if(timer1.get() <8.0){
+      shooter1.set(0);
+      shooter2.set(0);
+      intake1.set(0);
+      intake2.set(0);
+      flicker.setPosition(1);
+      // drive
+      frontLeft.set(0);
+      backLeft.set(0);
+      frontRight.set(0);
+      backRight.set(0);
     }
-    //else if(timer1.get() < 4.0){ //drive up to shoot
-    //  frontLeft.set(-.25);
-    //  backLeft.set(-.25);
-    //  frontRight.set(.25);
-    //  backRight.set(.25);
-    //}else if(timer1.get() < 4.2){ //drive stops and spins up shooter
-    //  frontLeft.set(0);
-    //  backLeft.set(0);
-    //  frontRight.set(0);
-    //  backRight.set(0);
-    //  shooter1.set(-68);
-    //  shooter2.set(-68);
-    //}else if(timer1.get() < 4.4){ //pause after shooting
-    //  shooter1.set(0);
-    //  shooter2.set(0);
-    //  intake1.set(0);
-    //  intake2.set(0);
-    //  //drive
-    //  frontLeft.set(0);
-    //  backLeft.set(0);
-    //  frontRight.set(0);
-    //  backRight.set(0);
-    //}else if(timer1.get() < 4.6)
-      
-    // Put custom auto code here
    break;
-   case kDefaultAuto:
-   default:
-
-   break;
-  
   }
 
 }
@@ -183,6 +314,19 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+
+   
+    frontLeft.set(MathUtil.applyDeadband(-driver.getLeftY()*limit, 0.08));
+    backLeft.set(MathUtil.applyDeadband(-driver.getLeftY()*limit, 0.08));
+    frontRight.set(MathUtil.applyDeadband(driver.getRightY()*limit, 0.08));
+    backRight.set(MathUtil.applyDeadband(driver.getRightY()*limit, 0.08));
+    //tank drive
+  if(driver.getRightStickButton()){
+    limit = .72;
+  }else if(driver.getLeftStickButton()){
+    limit = .50;
+  }
+   //strafe code
   if(driver.getRightBumper()){
    frontLeft.set(-.70);
    backLeft.set(.80);
@@ -193,23 +337,31 @@ public class Robot extends TimedRobot {
    backLeft.set(-.80);
    frontRight.set(-.60);
    backRight.set(.70);
-  } else { //tank drive part
-    if(driver.getRightStickButton()){
-      limit = .90;
-    }else if(driver.getLeftStickButton()){
-      limit = .45;
-    }
-   frontLeft.set(-driver.getLeftY()*limit);
-   backLeft.set(-driver.getLeftY()*limit);
-   frontRight.set(driver.getRightY()*limit);
-   backRight.set(driver.getRightY()*limit);
+  } else 
+  //intake controls
+  if(driver.getRightTriggerAxis() >= 0.15){
+   intake1.set(.80);  //pos
+   intake2.set(-.60);
+  }else if(driver.getRightTriggerAxis() <0.05){
+   intake1.stopMotor();
+   intake2.stopMotor();
   }
-  //Note dropper servo
-  if(driver.getYButton()){
-    Note.setPosition(.5);
-  }else{
-    Note.setPosition(1);
-  }
+  // else if (driver.getLeftTriggerAxis()>=0.15){
+    // intake1.set(-0.80);
+    // intake2.set(0.60);
+  // } else if (driver.getLeftTriggerAxis() <0.05){
+    // intake1.stopMotor();
+    // intake1.stopMotor();
+  // }
+
+  //if(driver.getLeftTriggerAxis() >= 0.15){  //outtake
+  //  intake1.set(-.80);
+  //  intake2.set(.60);
+  //}else if(driver.getLeftTriggerAxis() < 0.05){
+  //  intake1.set(0);
+  //  intake2.set(0);
+  //}
+
    //pneumatic controls
   if(driver.getBButton()){  //pneumatics go down
     solenoidOpen = !solenoidOpen;
@@ -221,25 +373,16 @@ public class Robot extends TimedRobot {
   } else{
     Armsolenoid.set(Value.kOff);
   }
-  //intake controls
-  if(coPilot.getAButtonPressed()){
-   intake1.set(.60);  //pos
-   intake2.set(-.60);
-  }else if(coPilot.getAButtonReleased()){
-   intake1.set(0);
-   intake2.set(0);
-  }
-  if(coPilot.getBButtonPressed()){  //outtake
-    intake1.set(-.60);
-    intake2.set(.60);
-  }else if(coPilot.getBButtonReleased()){
-    intake1.set(0);
-    intake2.set(0);
+  //Note dropper servo
+  if(coPilot.getRightTriggerAxis() >= .15){
+    Note.setPosition(.5);
+  }else{
+    Note.setPosition(1);
   }
   //shooter controls
   if(coPilot.getYButton()){
-   shooter1.set(-.80);
-   shooter2.set(.80);
+   shooter1.set(-.98);
+   shooter2.set(.98);
   }
   if(coPilot.getXButton()){
    shooter1.set(0);
@@ -247,7 +390,7 @@ public class Robot extends TimedRobot {
   }
   //flicker controls
   if(coPilot.getRightBumper()){
-    flicker.setPosition(-5);
+    flicker.setPosition(.6);
   }else {
     flicker.setPosition(1);
   }
